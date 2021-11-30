@@ -1,0 +1,49 @@
+version: '3'
+
+services:
+  reverse_proxy:
+    image: nginx:latest
+    ports:
+      - 80:80
+      - 443:443
+    restart: always
+    volumes:
+      - ./nginx/conf/:/etc/nginx/conf.d/:ro
+      - ./certbot/www:/var/www/certbot/:ro
+      - ./certbot/conf/:/etc/nginx/ssl/:ro
+      - ./auth:/auth
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/www/:/var/www/certbot/:rw
+      - ./certbot/conf/:/etc/letsencrypt/:rw
+  registry:
+    restart: always
+    image: registry:2
+    environment:
+      #REGISTRY_HTTP_ADDR: 0.0.0.0:443
+      #REGISTRY_HTTP_TLS_CERTIFICATE: /certbot/conf/live/sample.local/fullchain.pem
+      #REGISTRY_HTTP_TLS_KEY: /certbot/conf/live/sample.local/privkey.pem
+      REGISTRY_HTTP_SECRET: asecretforlocaldevelopment
+      REGISTRY_REDIS_ADDR: redis:6379
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+      #REGISTRY_AUTH: htpasswd
+      #REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+      #REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+    volumes:
+      - ./data/registry:/var/lib/registry
+      #- ./certbot:/certbot
+  redis:
+    image: "redis:alpine"
+  ui:
+    image: joxit/docker-registry-ui:latest
+    # ports:
+    #   - 81:80
+    environment:
+      - REGISTRY_TITLE=My Private Docker Registry
+      - NGINX_PROXY_PASS_URL=http://registry:5000
+      - NGINX_PROXY_HEADER_X_Forwarded_For=$$proxy_add_x_forwarded_for
+      - SINGLE_REGISTRY=true
+      - DELETE_IMAGES=true
+      # - SHOW_CONTENT_DIGEST=true
+      - PULL_URL=sample.local
