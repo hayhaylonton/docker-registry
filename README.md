@@ -19,7 +19,7 @@ note:<br>
 docker-compose exec reverse_proxy nginx -s reload
 
 --add user basic auth<br>
-docker run --entrypoint htpasswd httpd:2 -Bbn <user> <pass> > auth/htpasswd
+docker run --entrypoint htpasswd httpd:2 -Bbn user pass > auth/htpasswd
 
 --create random password<br>
 openssl rand -base64 32
